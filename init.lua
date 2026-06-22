@@ -121,10 +121,10 @@ require("lualine").setup({
 	},
 	sections = {
 		lualine_a = { 'mode' },
-		lualine_b = { 'branch', 'diff', 'diagnostics', 'buffers' },
+		lualine_b = { 'branch', 'diagnostics', 'buffers' },
 		lualine_c = {},
 		lualine_x = {},
-		lualine_y = { 'lsp_status' },
+		lualine_y = { 'diff', 'lsp_status' },
 		lualine_z = { 'progress', 'location' },
 	}
 })
