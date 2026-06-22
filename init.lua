@@ -146,7 +146,7 @@ vim.keymap.set("i", "<S-Tab>", function()
   return vim.fn.pumvisible() == 1 and "<C-p>" or "<S-Tab>"
 end, { expr = true })
 
-vim.keymap.set('t', "<leader>d", [[<C-\><C-n>]], { desc = "Detach from terminal" })
+vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], {desc = "Detach terminal", remap = false})
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
 vim.keymap.set('n', "<leader>lf", vim.lsp.buf.format, { desc = "Format file" })
 vim.keymap.set('n', "<leader>h", vim.lsp.buf.hover, { desc = "Hover" })
