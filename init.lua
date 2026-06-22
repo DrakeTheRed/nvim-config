@@ -21,6 +21,12 @@ function gh(author, name)
 	return "https://github.com/" .. author .. "/" .. name
 end
 
+local installed_lsp = {
+	"lua_ls",
+	"rust_analyzer",
+	"zls",
+}
+
 vim.pack.add({
 	gh("windwp", "nvim-autopairs"),
 	gh("rebelot", "kanagawa.nvim"),
@@ -33,24 +39,53 @@ vim.pack.add({
 	gh("WhoIsSethDaniel", "mason-tool-installer.nvim"),
 	gh("stevearc", "oil.nvim"),
 	gh("rachartier", "tiny-inline-diagnostic.nvim"),
+	gh("saghen", "blink.lib"),
+	gh("saghen", "blink.cmp"),
 	gh("tpope", "vim-fugitive"),
+	gh("ficd0", "ashen.nvim"),
 })
 
-vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('my.lsp', {}),
-	callback = function(ev)
-		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
-		vim.keymap.set("n", "gd", vim.lsp.buf.definition, {desc = "Go to definition", buf = ev.buf, remap = false})
-		if client:supports_method('textDocument/completion') then
-			vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
-		end
-	end,
-})
+-- Kept just for remembering
+-- vim.api.nvim_create_autocmd('LspAttach', {
+-- 	group = vim.api.nvim_create_augroup('my.lsp', {}),
+-- 	callback = function(ev)
+-- 		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+-- 		vim.keymap.set("n", "gd", vim.lsp.buf.definition, {desc = "Go to definition", buf = ev.buf, remap = false})
+-- 		if client:supports_method('textDocument/completion') then
+-- 			-- vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
+-- 		end
+-- 	end,
+-- })
+
 vim.o.foldmethod = "expr"
 vim.o.foldexpr = "v:lua.vim.lsp.foldexpr()"
 vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
 vim.o.foldenable = true
+
+local cmp = require('blink.cmp')
+cmp.build():pwait()
+cmp.setup({
+	completion = {
+		trigger = {
+			show_on_keyword = true
+		},
+		list = {
+			selection = {
+				auto_insert = true,
+			}
+		}
+	},
+	sources = {
+		default = { 'lsp', 'path', 'snippets', 'buffer' }
+	},
+	keymap = {
+		preset = 'enter',
+	}
+})
+vim.api.nvim_set_hl(0, "BlinkCmpMenu", { link = "NormalFloat" })
+vim.api.nvim_set_hl(0, "BlinkCmpMenuBorder", { link = "FloatBorder" })
+vim.api.nvim_set_hl(0, "BlinkCmpMenuSelection", { link = "PmenuSel" })
 
 local oil = require("oil")
 oil.setup({
@@ -82,12 +117,15 @@ require("tiny-inline-diagnostic").setup({
 require("mason").setup({})
 require("mason-lspconfig").setup({})
 require("mason-tool-installer").setup({
-	ensure_installed = {
-		"lua_ls",
-		"rust_analyzer",
-		"zls"
-	}
+	ensure_installed = installed_lsp
 })
+
+vim.lsp.config("*", {
+	capabilities = require('blink.cmp').get_lsp_capabilities()
+})
+for _, server in ipairs(installed_lsp) do
+	vim.lsp.enable(server)
+end
 
 vim.lsp.config('lua_ls', {
 	settings = {
@@ -114,7 +152,7 @@ vim.lsp.config('lua_ls', {
 require("nvim-autopairs").setup({})
 require("lualine").setup({
 	options = {
-		theme = "palenight",
+		theme = "codedark",
 		icons_enabled = true,
 		section_separators = { left = '', right = '' },
 		component_separators = { left = '|', right = '|' }
@@ -135,9 +173,9 @@ vim.keymap.set("n", "<leader>pb", function()
 	mp.builtin.buffers({})
 end)
 
-vim.cmd.colorscheme("kanagawa")
+vim.cmd.colorscheme("ashen")
+require("ashen").load()
 
-vim.keymap.set('i', "<C-Space>", '<C-x><C-o>', { desc = "Show suggestions" })
 vim.keymap.set("i", "<Tab>", function()
   return vim.fn.pumvisible() == 1 and "<C-n>" or "<Tab>"
 end, { expr = true })
@@ -149,7 +187,6 @@ end, { expr = true })
 vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], {desc = "Detach terminal", remap = false})
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
 vim.keymap.set('n', "<leader>lf", vim.lsp.buf.format, { desc = "Format file" })
-vim.keymap.set('n', "<leader>h", vim.lsp.buf.hover, { desc = "Hover" })
 
 vim.keymap.set('n', "<leader>kb", ":bdelete!<CR>", { desc = "closes current buffer" })
 vim.keymap.set('v', '<leader>d', '"_d', { desc = "Delete no yank pls" })
