@@ -2,6 +2,7 @@ vim.g.mapleader = " "
 
 vim.opt.number = true
 vim.opt.relativenumber = true
+vim.o.wrap = false
 vim.opt.clipboard = "unnamedplus"
 vim.opt.signcolumn = "yes:1"
 vim.opt.winborder = "rounded"
@@ -31,7 +32,6 @@ vim.pack.add({
 	gh("windwp", "nvim-autopairs"),
 	gh("rebelot", "kanagawa.nvim"),
 	gh("nvim-tree", "nvim-web-devicons"),
-	gh("nvim-lualine", "lualine.nvim"),
 	gh("neovim", "nvim-lspconfig"),
 	gh("nvim-mini", "mini.pick"),
 	gh("mason-org", "mason.nvim"),
@@ -43,25 +43,67 @@ vim.pack.add({
 	gh("saghen", "blink.cmp"),
 	gh("tpope", "vim-fugitive"),
 	gh("ficd0", "ashen.nvim"),
+	gh("nvim-mini", "mini.statusline"),
 })
 
--- Kept just for remembering
--- vim.api.nvim_create_autocmd('LspAttach', {
--- 	group = vim.api.nvim_create_augroup('my.lsp', {}),
--- 	callback = function(ev)
--- 		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
--- 		vim.keymap.set("n", "gd", vim.lsp.buf.definition, {desc = "Go to definition", buf = ev.buf, remap = false})
--- 		if client:supports_method('textDocument/completion') then
--- 			-- vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
--- 		end
--- 	end,
--- })
+require("ashen").load()
+vim.cmd.colorscheme("ashen")
+
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = vim.api.nvim_create_augroup('my.lsp', {}),
+	callback = function(ev)
+		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+		vim.keymap.set("n", "gd", vim.lsp.buf.definition, {desc = "Go to definition", buf = ev.buf, remap = false})
+		-- Kept just for remembering
+		-- if client:supports_method('textDocument/completion') then
+		-- 	   vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
+		-- end
+	end,
+})
 
 vim.o.foldmethod = "expr"
 vim.o.foldexpr = "v:lua.vim.lsp.foldexpr()"
 vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
 vim.o.foldenable = true
+
+local msl = require('mini.statusline')
+msl.setup({
+	content = {
+		active = function ()
+			local mode, mode_hl = msl.section_mode({ trunc_width = 12 })
+			local filename = msl.section_filename({trunc_width = 50})
+
+			local mode_colors = vim.api.nvim_get_hl(0, {
+				name = mode_hl,
+				link = false
+			})
+			local background = mode_colors.bg
+
+			local devinfo_colors = vim.api.nvim_get_hl(0, {
+				name = 'MiniStatuslineDevinfo',
+				link = false
+			})
+			local devinfo_background = devinfo_colors.bg
+
+			vim.api.nvim_set_hl(0, 'StatuslineTriangleLeft', {fg = background, bg = devinfo_background})
+			-- return msl.combine_groups({
+			-- 	{ hl = mode_hl, strings = {filename}},
+			-- 	{ hl = 'StatuslineTriangleLeft', strings = {''} },
+			-- })
+			
+			local parts = {
+				string.format("%%#%s# %s %%#StatuslineTriangleLeft#", mode_hl, filename)
+			}
+			return table.concat(parts, "")
+		end
+	}
+})
+
+local hl = vim.api.nvim_set_hl
+hl(0, 'MiniStatuslineModeNormal', { bg = '#df6464', fg = '#000000', bold = true })
+hl(0, 'MiniStatuslineModeVisual', { bg = '#3a6363', fg = '#000000', bold = true })
+hl(0, 'MiniStatuslineModeCommand', { bg = '#1e6f54', fg = '#000000', bold = true })
 
 local cmp = require('blink.cmp')
 cmp.build():pwait()
@@ -83,9 +125,6 @@ cmp.setup({
 		preset = 'enter',
 	}
 })
-vim.api.nvim_set_hl(0, "BlinkCmpMenu", { link = "NormalFloat" })
-vim.api.nvim_set_hl(0, "BlinkCmpMenuBorder", { link = "FloatBorder" })
-vim.api.nvim_set_hl(0, "BlinkCmpMenuSelection", { link = "PmenuSel" })
 
 local oil = require("oil")
 oil.setup({
@@ -150,39 +189,11 @@ vim.lsp.config('lua_ls', {
 })
 
 require("nvim-autopairs").setup({})
-require("lualine").setup({
-	options = {
-		theme = "codedark",
-		icons_enabled = true,
-		section_separators = { left = '', right = '' },
-		component_separators = { left = '|', right = '|' }
-	},
-	sections = {
-		lualine_a = { 'mode' },
-		lualine_b = { 'branch', 'diagnostics', 'buffers' },
-		lualine_c = {},
-		lualine_x = {},
-		lualine_y = { 'diff', 'lsp_status' },
-		lualine_z = { 'progress', 'location' },
-	}
-})
-
 local mp = require("mini.pick")
 mp.setup({})
 vim.keymap.set("n", "<leader>pb", function()
 	mp.builtin.buffers({})
 end)
-
-vim.cmd.colorscheme("ashen")
-require("ashen").load()
-
-vim.keymap.set("i", "<Tab>", function()
-  return vim.fn.pumvisible() == 1 and "<C-n>" or "<Tab>"
-end, { expr = true })
-
-vim.keymap.set("i", "<S-Tab>", function()
-  return vim.fn.pumvisible() == 1 and "<C-p>" or "<S-Tab>"
-end, { expr = true })
 
 vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], {desc = "Detach terminal", remap = false})
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
