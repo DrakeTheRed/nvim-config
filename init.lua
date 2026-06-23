@@ -44,6 +44,7 @@ vim.pack.add({
 	gh("tpope", "vim-fugitive"),
 	gh("ficd0", "ashen.nvim"),
 	gh("nvim-mini", "mini.statusline"),
+	gh("nvim-mini", "mini.diff"),
 })
 
 require("ashen").load()
@@ -53,7 +54,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('my.lsp', {}),
 	callback = function(ev)
 		local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
-		vim.keymap.set("n", "gd", vim.lsp.buf.definition, {desc = "Go to definition", buf = ev.buf, remap = false})
+		vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Go to definition", buf = ev.buf, remap = false })
 		-- Kept just for remembering
 		-- if client:supports_method('textDocument/completion') then
 		-- 	   vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
@@ -67,12 +68,15 @@ vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
 vim.o.foldenable = true
 
+require("mini.diff").setup({})
 local msl = require('mini.statusline')
 msl.setup({
 	content = {
-		active = function ()
+		active = function()
 			local mode, mode_hl = msl.section_mode({ trunc_width = 12 })
-			local filename = msl.section_filename({trunc_width = 50})
+			local filename = msl.section_filename({ trunc_width = 50 })
+			local diff = msl.section_diff({ trunc_width = 10 })
+			local searchcount = msl.section_searchcount({ trunc_width = 10 })
 
 			local mode_colors = vim.api.nvim_get_hl(0, {
 				name = mode_hl,
@@ -86,14 +90,36 @@ msl.setup({
 			})
 			local devinfo_background = devinfo_colors.bg
 
-			vim.api.nvim_set_hl(0, 'StatuslineTriangleLeft', {fg = background, bg = devinfo_background})
+			local branch = vim.fn.FugitiveHead()
+			if not (string.len(branch) == 0) then
+				branch = " " .. branch
+			end
+
+			vim.api.nvim_set_hl(0, 'StatuslineTriangleLeft', { fg = background, bg = devinfo_background })
 			-- return msl.combine_groups({
 			-- 	{ hl = mode_hl, strings = {filename}},
 			-- 	{ hl = 'StatuslineTriangleLeft', strings = {''} },
 			-- })
-			
+
+			local lsp_clients = (function()
+				local buf_clients = vim.lsp.get_clients({ bufnr = 0 })
+				if next(buf_clients) == nil then return "" end
+
+				local names = {}
+				for _, client in ipairs(buf_clients) do
+					table.insert(names, client.name)
+				end
+				return table.concat(names, ", ")
+			end)()
+
 			local parts = {
-				string.format("%%#%s# %s %%#StatuslineTriangleLeft#", mode_hl, filename)
+				string.format("%%#%s# %s %%#StatuslineTriangleLeft#", mode_hl, filename),
+				string.format(" %s ", branch),
+				"%=",
+				string.format(" %s ", searchcount),
+				(lsp_clients ~= "") 
+          and string.format("%%#MiniStatuslineLsp# %s ", lsp_clients) or "",
+				string.format("%%#StatuslineTriangleLeft#%%#%s# %s ", mode_hl, diff),
 			}
 			return table.concat(parts, "")
 		end
@@ -104,6 +130,7 @@ local hl = vim.api.nvim_set_hl
 hl(0, 'MiniStatuslineModeNormal', { bg = '#df6464', fg = '#000000', bold = true })
 hl(0, 'MiniStatuslineModeVisual', { bg = '#3a6363', fg = '#000000', bold = true })
 hl(0, 'MiniStatuslineModeCommand', { bg = '#1e6f54', fg = '#000000', bold = true })
+hl(0, 'IncSearch', { bg = '#c4693d', fg = '#000000', bold = true })
 
 local cmp = require('blink.cmp')
 cmp.build():pwait()
@@ -122,7 +149,7 @@ cmp.setup({
 		default = { 'lsp', 'path', 'snippets', 'buffer' }
 	},
 	keymap = {
-		preset = 'enter',
+		preset = 'super-tab',
 	}
 })
 
@@ -195,7 +222,7 @@ vim.keymap.set("n", "<leader>pb", function()
 	mp.builtin.buffers({})
 end)
 
-vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], {desc = "Detach terminal", remap = false})
+vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], { desc = "Detach terminal", remap = false })
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
 vim.keymap.set('n', "<leader>lf", vim.lsp.buf.format, { desc = "Format file" })
 
