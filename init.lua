@@ -116,6 +116,7 @@ msl.setup({
 				string.format("%%#%s# %s %%#StatuslineTriangleLeft#", mode_hl, filename),
 				string.format(" %s ", branch),
 				"%=",
+				string.format(" CWD: %s ", vim.fn.getcwd()),
 				string.format(" %s ", searchcount),
 				(lsp_clients ~= "")
 				and string.format("%%#MiniStatuslineLsp# %s ", lsp_clients) or "",
@@ -163,6 +164,9 @@ oil.setup({
 	},
 	view_options = {
 		show_hidden = true
+	},
+	keymaps = {
+		["<leader>cd"] = "actions.cd"
 	}
 })
 vim.keymap.set("n", "<leader>pf", function()
@@ -172,7 +176,9 @@ vim.api.nvim_create_autocmd("VimEnter", {
 	desc = "Open Oil on startup",
 	callback = function()
 		if vim.fn.argc() == 0 and vim.api.nvim_buf_get_name(0) then
-			oil.open_float()
+			vim.schedule(function()
+				oil.open()
+			end)
 		end
 	end
 })
