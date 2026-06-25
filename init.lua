@@ -117,8 +117,8 @@ msl.setup({
 				string.format(" %s ", branch),
 				"%=",
 				string.format(" %s ", searchcount),
-				(lsp_clients ~= "") 
-          and string.format("%%#MiniStatuslineLsp# %s ", lsp_clients) or "",
+				(lsp_clients ~= "")
+				and string.format("%%#MiniStatuslineLsp# %s ", lsp_clients) or "",
 				string.format("%%#StatuslineTriangleLeft#%%#%s# %s ", mode_hl, diff),
 			}
 			return table.concat(parts, "")
@@ -150,6 +150,7 @@ cmp.setup({
 	},
 	keymap = {
 		preset = 'super-tab',
+		['<CR>'] = { "accept", "fallback" },
 	}
 })
 
@@ -167,6 +168,14 @@ oil.setup({
 vim.keymap.set("n", "<leader>pf", function()
 	oil.open_float(vim.fn.getcwd())
 end, { desc = "Opens Oil in cwd" })
+vim.api.nvim_create_autocmd("VimEnter", {
+	desc = "Open Oil on startup",
+	callback = function()
+		if vim.fn.argc() == 0 and vim.api.nvim_buf_get_name(0) then
+			oil.open_float()
+		end
+	end
+})
 
 require("tiny-inline-diagnostic").setup({
 	preset = "minimal",
@@ -225,6 +234,8 @@ end)
 vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], { desc = "Detach terminal", remap = false })
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
 vim.keymap.set('n', "<leader>lf", vim.lsp.buf.format, { desc = "Format file" })
+vim.keymap.set('v', "<leader>ib", "<gv", { desc = "Indent back and reselect" })
+vim.keymap.set('v', "<leader>if", ">gv", { desc = "Indent and reselect" })
 
 vim.keymap.set('n', "<leader>kb", ":bdelete!<CR>", { desc = "closes current buffer" })
 vim.keymap.set('v', '<leader>d', '"_d', { desc = "Delete no yank pls" })
