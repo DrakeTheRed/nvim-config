@@ -45,7 +45,11 @@ vim.pack.add({
 	gh("ficd0", "ashen.nvim"),
 	gh("nvim-mini", "mini.statusline"),
 	gh("nvim-mini", "mini.diff"),
+	gh("nvim-lua", "plenary.nvim"),
+	gh("nvim-telescope", "telescope.nvim"),
 })
+
+require('telescope').setup({})
 
 require("ashen").load()
 vim.cmd.colorscheme("ashen")
@@ -236,6 +240,9 @@ mp.setup({})
 vim.keymap.set("n", "<leader>pb", function()
 	mp.builtin.buffers({})
 end)
+
+local telescope = require('telescope.builtin')
+vim.keymap.set('n', '<leader>sd', telescope.live_grep, { desc = "Live search in cwd" })
 
 vim.keymap.set('t', "<C-d>", [[<C-\><C-n>]], { desc = "Detach terminal", remap = false })
 vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
