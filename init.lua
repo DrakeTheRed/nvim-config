@@ -7,6 +7,7 @@ vim.opt.clipboard = "unnamedplus"
 vim.opt.signcolumn = "yes:1"
 vim.opt.winborder = "rounded"
 vim.o.scrolloff = 999
+vim.o.updatetime = 1000
 
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
@@ -26,6 +27,7 @@ local installed_lsp = {
 	"lua_ls",
 	"rust_analyzer",
 	"zls",
+	"denols",
 }
 
 vim.pack.add({
@@ -64,6 +66,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		-- 	   vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
 		-- end
 	end,
+})
+
+vim.api.nvim_create_autocmd({"CursorHold", "CursorHoldI"}, {
+	pattern = "*",
+	callback = function ()
+		if vim.bo.modified and vim.bo.buftype == "" and vim.fn.expand("%") ~= "" then
+			vim.cmd("write")
+		end
+	end
 })
 
 vim.o.foldmethod = "expr"
