@@ -28,6 +28,7 @@ local installed_lsp = {
 	"rust_analyzer",
 	"zls",
 	"denols",
+	"svelte-language-server"
 }
 
 vim.pack.add({
@@ -260,8 +261,10 @@ vim.keymap.set('n', "<leader>lt", ":term<CR>", { desc = "Open Terminal" })
 vim.keymap.set('n', "<leader>lf", vim.lsp.buf.format, { desc = "Format file" })
 vim.keymap.set('v', "<leader>ib", "<gv", { desc = "Indent back and reselect" })
 vim.keymap.set('v', "<leader>if", ">gv", { desc = "Indent and reselect" })
+vim.keymap.set('n', "<leader>sh", vim.lsp.buf.hover, { desc = "Show hover" })
 
 vim.keymap.set('n', "<leader>kb", ":bdelete!<CR>", { desc = "closes current buffer" })
 vim.keymap.set('v', '<leader>d', '"_d', { desc = "Delete no yank pls" })
 vim.keymap.set('n', '<leader>d', '"_dd', { desc = "Delete line no yank pls" })
 vim.keymap.set('n', '<leader>rn', ':set relativenumber!<CR>', { desc = "Set relativenumber on/off" })
+vim.keymap.set('i', '<C-z>', '<C-o>u', { desc = "Undo last save" })
