@@ -14,6 +14,12 @@ vim.opt.shiftwidth = 2
 vim.opt.softtabstop = 2
 vim.opt.swapfile = false
 
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.lsp.foldexpr()"
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
 vim.cmd("set completeopt+=noselect")
 vim.diagnostic.config({
 	update_in_insert = true
@@ -50,12 +56,39 @@ vim.pack.add({
 	gh("nvim-mini", "mini.diff"),
 	gh("nvim-lua", "plenary.nvim"),
 	gh("nvim-telescope", "telescope.nvim"),
+	gh("nvim-treesitter", "nvim-treesitter"),
+})
+
+local nvim_ts = require("nvim-treesitter")
+nvim_ts.setup({
+	install_dir = vim.fn.stdpath("data") .. '/site'
+})
+nvim_ts.install({
+	"rust",
+	"zig",
+	"svelte",
+	"css",
+	"typescript",
+	"javascript",
+	"html",
+	"html_tags",
+	"lua",
+	"luadoc"
 })
 
 require('telescope').setup({})
-
 require("ashen").load()
 vim.cmd.colorscheme("ashen")
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "*",
+	callback = function (args)
+		local lang = vim.treesitter.language.get_lang(args.match)
+		if lang and vim.treesitter.highlighter.active[args.buf] then
+			pcall(vim.treesitter.start)
+		end
+	end
+})
 
 vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('my.lsp', {}),
@@ -77,12 +110,6 @@ vim.api.nvim_create_autocmd({"CursorHold", "CursorHoldI"}, {
 		end
 	end
 })
-
-vim.o.foldmethod = "expr"
-vim.o.foldexpr = "v:lua.vim.lsp.foldexpr()"
-vim.o.foldlevel = 99
-vim.o.foldlevelstart = 99
-vim.o.foldenable = true
 
 require("mini.diff").setup({})
 local msl = require('mini.statusline')
@@ -128,15 +155,20 @@ msl.setup({
 				return table.concat(names, ", ")
 			end)()
 
+			local is_searching = (vim.fn.getcmdtype() == "/") or (vim.fn.getcmdtype() == "?")
+			local right_tab = diff
+			if is_searching then
+				right_tab = searchcount
+			end
+
 			local parts = {
 				string.format("%%#%s# %s %%#StatuslineTriangleLeft#", mode_hl, filename),
 				string.format(" %s ", branch),
 				"%=",
 				string.format(" CWD: %s ", vim.fn.getcwd()),
-				string.format(" %s ", searchcount),
 				(lsp_clients ~= "")
 				and string.format("%%#MiniStatuslineLsp# %s ", lsp_clients) or "",
-				string.format("%%#StatuslineTriangleLeft#%%#%s# %s ", mode_hl, diff),
+				string.format("%%#StatuslineTriangleLeft#%%#%s# %s ", mode_hl, right_tab),
 			}
 			return table.concat(parts, "")
 		end
@@ -217,34 +249,9 @@ require("mason-tool-installer").setup({
 	ensure_installed = installed_lsp
 })
 
-vim.lsp.config("*", {
-	capabilities = require('blink.cmp').get_lsp_capabilities()
-})
 for _, server in ipairs(installed_lsp) do
 	vim.lsp.enable(server)
 end
-
-vim.lsp.config('lua_ls', {
-	settings = {
-		Lua = {
-			runtime = {
-				version = "LuaJIT"
-			},
-			diagnostics = {
-				globals = {
-					'vim',
-					'require'
-				}
-			},
-			workspace = {
-				library = vim.api.nvim_get_runtime_file("", true)
-			},
-			telemetry = {
-				enable = false
-			},
-		}
-	}
-})
 
 require("nvim-autopairs").setup({})
 local mp = require("mini.pick")
